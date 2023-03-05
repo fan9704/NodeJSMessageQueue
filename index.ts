@@ -20,11 +20,20 @@ mqttClient.on('error', (err) => {
 });
 
 // Subscribe to a topic
-mqttClient.subscribe('/message/#');
+// mqttClient.subscribe('/message/#'); //接收全部 /message主題 開頭的訊息
+mqttClient.subscribe(`/message/${username}`); //接收/message/自己的訊息
+mqttClient.subscribe(`/message/lobby`); //接收/message/lobby 公共聊天室
 
 // Handle incoming MQTT messages
 mqttClient.on('message', (topic, message) => {
-  console.log(`Received message on topic ${topic}: ${message.toString()}`);
+    if(topic == `/message/${username}`){
+        console.log(`收到私人訊息:${message.toString()}`);
+    }else if(topic == '/message/lobby'){
+        console.log(`[大廳]:${message.toString()}`);
+    }else{
+        console.log(`[偷看別人訊息] 收件人:${topic} 訊息: ${message.toString()}`);
+    }
+
 });
 
 // Handle incoming HTTP requests
@@ -41,7 +50,8 @@ app.post('/pub', express.json(),(req:Request,res:Response,next:NextFunction)=>{
     let message:String = req.body["message"];
 
     // Publish a Message
-    mqttClient.publish(`/message/${receiver}`,`${message}`);
+    mqttClient.publish(`/message/${receiver}`,`${message}`);//TODO: Send JSON With Sender
+    res.send(`Receiver ${receiver} Message ${message}`);
 })
 app.get('/pub2/:receiver/:message', express.json(),(req:Request,res:Response,next:NextFunction)=>{
     let receiver:String = req.params["receiver"];
